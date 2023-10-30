@@ -6,12 +6,12 @@ import (
 )
 
 type BoardType struct {
-	Id          int       `json:"id"`
-	CreateBy    int       `json:"create_by"`
-	CafeId      int       `json:"cafe_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
+	Id          int
+	CreateBy    int
+	CafeId      int
+	Name        string
+	Description string
+	CreatedAt   time.Time
 }
 
 func (bt BoardType) ValidBoardType() error {
