@@ -30,3 +30,14 @@ func (c BoardTypeController) GetListByCafe(ctx context.Context, cafeId int, reqP
 	}
 	return res.ToBoardTypeDtoList(domains), total, nil
 }
+
+func (c BoardTypeController) Delete(ctx context.Context, cafeId int, typeId int) error {
+	err := c.s.Delete(ctx, cafeId, typeId)
+	return err
+}
+
+func (c BoardTypeController) Patch(ctx context.Context, cafeId int, typeId int, d req.PatchBoardDto) error {
+	tDo := d.ToDomain(cafeId, typeId)
+	err := c.s.Patch(ctx, tDo)
+	return err
+}
