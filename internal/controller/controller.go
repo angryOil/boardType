@@ -5,6 +5,7 @@ import (
 	"boardType/internal/controller/res"
 	"boardType/internal/page"
 	"boardType/internal/service"
+	req2 "boardType/internal/service/req"
 	"context"
 )
 
@@ -18,17 +19,29 @@ func NewBoardTypeController(s service.BoardTypeService) BoardTypeController {
 	}
 }
 func (c BoardTypeController) Create(ctx context.Context, cafeId int, memberId int, d req.CreateBoardTypeDto) error {
-	btd := d.ToDomain(cafeId, memberId)
-	err := c.s.Create(ctx, btd)
+	err := c.s.Create(ctx, req2.Create{
+		Name:        d.Name,
+		Description: d.Description,
+		CafeId:      cafeId,
+		MemberId:    memberId,
+	})
 	return err
 }
 
 func (c BoardTypeController) GetListByCafe(ctx context.Context, cafeId int, reqPage page.ReqPage) ([]res.BoardTypeDto, int, error) {
-	domains, total, err := c.s.GetListByCafe(ctx, cafeId, reqPage)
+	listArr, total, err := c.s.GetListByCafe(ctx, cafeId, reqPage)
 	if err != nil {
 		return []res.BoardTypeDto{}, 0, err
 	}
-	return res.ToBoardTypeDtoList(domains), total, nil
+	dto := make([]res.BoardTypeDto, len(listArr))
+	for i, l := range listArr {
+		dto[i] = res.BoardTypeDto{
+			Id:          l.Id,
+			Name:        l.Name,
+			Description: l.Description,
+		}
+	}
+	return dto, total, nil
 }
 
 func (c BoardTypeController) Delete(ctx context.Context, cafeId int, typeId int) error {
@@ -36,8 +49,12 @@ func (c BoardTypeController) Delete(ctx context.Context, cafeId int, typeId int)
 	return err
 }
 
-func (c BoardTypeController) Patch(ctx context.Context, cafeId int, typeId int, d req.PatchBoardDto) error {
-	tDo := d.ToDomain(cafeId, typeId)
-	err := c.s.Patch(ctx, tDo)
+func (c BoardTypeController) Patch(ctx context.Context, cafeId, typeId int, d req.PatchBoardDto) error {
+	err := c.s.Patch(ctx, req2.Patch{
+		Id:          typeId,
+		Name:        d.Name,
+		Description: d.Description,
+		CafeId:      cafeId,
+	})
 	return err
 }
