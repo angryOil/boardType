@@ -2,10 +2,15 @@ package service
 
 import (
 	"boardType/internal/domain"
+	"boardType/internal/domain/vo"
 	"boardType/internal/page"
 	"boardType/internal/repository"
+	req2 "boardType/internal/repository/req"
+	"boardType/internal/service/req"
+	"boardType/internal/service/res"
 	"context"
 	"errors"
+	"time"
 )
 
 type BoardTypeService struct {
@@ -17,18 +22,48 @@ func NewBoardTypeService(repo repository.BoardTypeRepository) BoardTypeService {
 		repo: repo,
 	}
 }
-func (s BoardTypeService) Create(ctx context.Context, btd domain.BoardType) error {
-	err := btd.ValidBoardType()
+
+const (
+	NoRows = "no rows"
+)
+
+func (s BoardTypeService) Create(ctx context.Context, c req.Create) error {
+	name, description := c.Name, c.Description
+	cafeId, memberId := c.CafeId, c.MemberId
+	createdAt := time.Now()
+	err := domain.NewBoardTypeBuilder().
+		Name(name).
+		Description(description).
+		CafeId(cafeId).
+		CreateBy(memberId).
+		CreatedAt(createdAt).
+		Build().ValidCreate()
 	if err != nil {
 		return err
 	}
-	err = s.repo.Create(ctx, btd)
+
+	err = s.repo.Create(ctx, req2.Create{
+		Name:        name,
+		Description: description,
+		CafeId:      cafeId,
+		CreateBy:    memberId,
+		CreatedAt:   createdAt,
+	})
 	return err
 }
 
-func (s BoardTypeService) GetListByCafe(ctx context.Context, cafeId int, reqPage page.ReqPage) ([]domain.BoardType, int, error) {
+func (s BoardTypeService) GetListByCafe(ctx context.Context, cafeId int, reqPage page.ReqPage) ([]res.GetListByCafe, int, error) {
 	domains, total, err := s.repo.GetListByCafeId(ctx, cafeId, reqPage)
-	return domains, total, err
+	dto := make([]res.GetListByCafe, len(domains))
+	for i, d := range domains {
+		v := d.ToInfo()
+		dto[i] = res.GetListByCafe{
+			Id:          v.Id,
+			Name:        v.Name,
+			Description: v.Description,
+		}
+	}
+	return dto, total, err
 }
 
 func (s BoardTypeService) Delete(ctx context.Context, cafeId int, typeId int) error {
@@ -36,26 +71,27 @@ func (s BoardTypeService) Delete(ctx context.Context, cafeId int, typeId int) er
 	return err
 }
 
-func (s BoardTypeService) Patch(ctx context.Context, d domain.BoardType) error {
-	if d.Name == "" {
-		return errors.New("invalid name")
-	}
-	err := s.repo.Patch(ctx, d.CafeId, d.Id,
+func (s BoardTypeService) Patch(ctx context.Context, p req.Patch) error {
+	id, cafeId, createBy := p.Id, p.CafeId, p.MemberId
+	name, description := p.Name, p.Description
+	err := domain.NewBoardTypeBuilder().
+		Id(id).
+		Name(name).
+		Description(description).
+		CafeId(cafeId).
+		CreateBy(createBy).
+		Build().ValidUpdate()
+
+	err = s.repo.Patch(ctx, p.Id,
 		func(domains []domain.BoardType) (domain.BoardType, error) {
-			if len(domains) == 0 {
-				return domain.BoardType{}, errors.New("no rows")
+			if len(domains) != 1 {
+				return nil, errors.New(NoRows)
 			}
 			return domains[0], nil
 		},
-		func(filtered domain.BoardType) domain.BoardType {
-			return domain.BoardType{
-				Id:          d.Id,
-				CreateBy:    filtered.CreateBy,
-				CafeId:      filtered.CafeId,
-				Name:        d.Name,
-				Description: d.Description,
-				CreatedAt:   filtered.CreatedAt,
-			}
+		func(filtered domain.BoardType) vo.Update {
+			u := filtered.Update(name, description)
+			return u.ToUpdate()
 		},
 	)
 	return err

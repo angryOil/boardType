@@ -2,6 +2,7 @@ package model
 
 import (
 	"boardType/internal/domain"
+	"boardType/internal/repository/req"
 	"github.com/uptrace/bun"
 	"time"
 )
@@ -17,18 +18,28 @@ type BoardType struct {
 	CreatedAt   time.Time `bun:"created_at"`
 }
 
-func ToModel(d domain.BoardType) BoardType {
+func ToCreateModel(c req.Create) BoardType {
 	return BoardType{
-		Id:          d.Id,
-		CreateBy:    d.CreateBy,
-		CafeId:      d.CafeId,
-		Name:        d.Name,
-		Description: d.Description,
-		CreatedAt:   d.CreatedAt,
+		CreateBy:    c.CreateBy,
+		CafeId:      c.CafeId,
+		Name:        c.Name,
+		Description: c.Description,
+		CreatedAt:   c.CreatedAt,
 	}
 }
 
-func ToDomainLIst(models []BoardType) []domain.BoardType {
+func ToUpdateModel(u req.Update) BoardType {
+	return BoardType{
+		Id:          u.Id,
+		CreateBy:    u.MemberId,
+		CafeId:      u.CafeId,
+		Name:        u.Name,
+		Description: u.Description,
+		CreatedAt:   u.CreatedAt,
+	}
+}
+
+func ToDomainList(models []BoardType) []domain.BoardType {
 	results := make([]domain.BoardType, len(models))
 	for i, m := range models {
 		results[i] = m.ToDomain()
@@ -37,12 +48,12 @@ func ToDomainLIst(models []BoardType) []domain.BoardType {
 }
 
 func (m BoardType) ToDomain() domain.BoardType {
-	return domain.BoardType{
-		Id:          m.Id,
-		CreateBy:    m.CreateBy,
-		CafeId:      m.CafeId,
-		Name:        m.Name,
-		Description: m.Description,
-		CreatedAt:   m.CreatedAt,
-	}
+	return domain.NewBoardTypeBuilder().
+		Id(m.Id).
+		CreateBy(m.CreateBy).
+		CafeId(m.CafeId).
+		Name(m.Name).
+		Description(m.Description).
+		CreatedAt(m.CreatedAt).
+		Build()
 }

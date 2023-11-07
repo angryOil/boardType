@@ -28,16 +28,23 @@ func NewHandler(c controller.BoardTypeController) http.Handler {
 	return m
 }
 
+const (
+	InvalidCafeId       = "invalid cafe id"
+	InvalidMemberId     = "invalid member id"
+	InvalidTypeId       = "invalid type id"
+	InternalServerError = "internal server error"
+)
+
 func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	memberId, err := strconv.Atoi(vars["memberId"])
 	if err != nil {
-		http.Error(w, "invalid member id", http.StatusBadRequest)
+		http.Error(w, InvalidMemberId, http.StatusBadRequest)
 		return
 	}
 
@@ -58,8 +65,7 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}
-		log.Println("Create err: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -69,7 +75,7 @@ func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	reqPage := page.GetPageReqByRequest(r)
@@ -82,6 +88,7 @@ func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(res.NewListTotalDto(dtoList, total))
 	if err != nil {
 		log.Println("getList json.Marshal err: ", err)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -93,12 +100,12 @@ func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
 	// 사실 카페 아이디 까지 필요하진 않지만 한번더 확인
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	typeId, err := strconv.Atoi(vars["typeId"])
 	if err != nil {
-		http.Error(w, "invalid type id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	err = h.c.Delete(r.Context(), cafeId, typeId)
@@ -113,19 +120,19 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	// 사실 카페 아이디 까지 필요하진 않지만 한번더 확인 실제론 cafeAPI 측에서 해야함
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	typeId, err := strconv.Atoi(vars["typeId"])
 	if err != nil {
-		http.Error(w, "invalid type id", http.StatusBadRequest)
+		http.Error(w, InvalidTypeId, http.StatusBadRequest)
 		return
 	}
 	var d req.PatchBoardDto
 	err = json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
 		log.Println("patch json.NewDecoder err: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
