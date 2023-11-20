@@ -21,6 +21,7 @@ func NewHandler(c controller.BoardTypeController) http.Handler {
 	m := mux.NewRouter()
 	h := Handler{c: c}
 	m.HandleFunc("/board-types/{cafeId:[0-9]+}", h.getList).Methods(http.MethodGet)
+	m.HandleFunc("/board-types/{cafeId:[0-9]+}/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	m.HandleFunc("/board-types/{cafeId:[0-9]+}/{typeId:[0-9]+}", h.delete).Methods(http.MethodDelete)
 	m.HandleFunc("/board-types/{cafeId:[0-9]+}/{typeId:[0-9]+}", h.patch).Methods(http.MethodPatch)
 	m.HandleFunc("/board-types/{cafeId:[0-9]+}/{memberId:[0-9]+}", h.create).Methods(http.MethodPost)
@@ -33,6 +34,7 @@ const (
 	InvalidMemberId     = "invalid member id"
 	InvalidTypeId       = "invalid type id"
 	InternalServerError = "internal server error"
+	InvalidId           = "invalid board type id"
 )
 
 func (h Handler) create(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +54,7 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
 		log.Println("create json.NewDecoder err: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	err = h.c.Create(r.Context(), cafeId, memberId, d)
@@ -145,4 +147,26 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, InvalidId, http.StatusBadRequest)
+		return
+	}
+	dto, err := h.c.GetDetail(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	date, err := json.Marshal(dto)
+	if err != nil {
+		log.Println("getDetail json.Marshal err: ", err)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(date)
 }

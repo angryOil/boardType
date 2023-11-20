@@ -24,7 +24,8 @@ func NewBoardTypeService(repo repository.BoardTypeRepository) BoardTypeService {
 }
 
 const (
-	NoRows = "no rows"
+	NoRows    = "no rows"
+	InvalidId = "invalid board type id"
 )
 
 func (s BoardTypeService) Create(ctx context.Context, c req.Create) error {
@@ -95,4 +96,20 @@ func (s BoardTypeService) Patch(ctx context.Context, p req.Patch) error {
 		},
 	)
 	return err
+}
+
+func (s BoardTypeService) GetDetail(ctx context.Context, id int) (res.GetDetail, error) {
+	if id < 1 {
+		return res.GetDetail{}, errors.New(InvalidId)
+	}
+	d, err := s.repo.GetDetail(ctx, id)
+	if err != nil {
+		return res.GetDetail{}, err
+	}
+	v := d.ToDetail()
+	return res.GetDetail{
+		Id:          v.Id,
+		Name:        v.Name,
+		Description: v.Description,
+	}, nil
 }
