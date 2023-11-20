@@ -17,3 +17,9 @@ func NewListTotalDto[T any](contents []T, total int) ListTotalDto[T] {
 		Total:    total,
 	}
 }
+
+type BoardDetailDto struct {
+	Id          int    `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
