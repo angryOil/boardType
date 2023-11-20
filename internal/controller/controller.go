@@ -58,3 +58,15 @@ func (c BoardTypeController) Patch(ctx context.Context, cafeId, typeId int, d re
 	})
 	return err
 }
+
+func (c BoardTypeController) GetDetail(ctx context.Context, id int) (res.BoardDetailDto, error) {
+	d, err := c.s.GetDetail(ctx, id)
+	if err != nil {
+		return res.BoardDetailDto{}, err
+	}
+	return res.BoardDetailDto{
+		Id:          d.Id,
+		Name:        d.Name,
+		Description: d.Description,
+	}, nil
+}

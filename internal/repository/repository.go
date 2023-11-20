@@ -88,3 +88,16 @@ func (r BoardTypeRepository) Patch(
 	}
 	return nil
 }
+
+func (r BoardTypeRepository) GetDetail(ctx context.Context, id int) (domain.BoardType, error) {
+	var models []model.BoardType
+	err := r.db.NewSelect().Model(&models).Where("id = ? ", id).Scan(ctx)
+	if err != nil {
+		log.Println("GetDetail NewSelect err: ", err)
+		return domain.NewBoardTypeBuilder().Build(), err
+	}
+	if len(models) != 1 {
+		return domain.NewBoardTypeBuilder().Build(), nil
+	}
+	return models[0].ToDomain(), nil
+}
